@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Net.Http;
 
 namespace Microsoft.Azure.DataLake.Store
 {
@@ -10,7 +11,7 @@ namespace Microsoft.Azure.DataLake.Store
         /// <summary>
         /// HTTP method the operation uses like GET/PUT/POST
         /// </summary>
-        internal string Method { get; }
+        internal HttpMethod Method { get; }
         /// <summary>
         /// Whether the http request for this operation requires request body (data)
         /// </summary>
@@ -24,7 +25,7 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         internal string Namespace { get; }
 
-        internal Operation(string mthd, bool reqBody, bool retBody, string nmSpc)
+        internal Operation(HttpMethod mthd, bool reqBody, bool retBody, string nmSpc)
         {
             Method = mthd;
             RequiresBody = reqBody;
@@ -37,30 +38,30 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         internal static Dictionary<string, Operation> Operations = new Dictionary<string, Operation>()
         {
-            {"OPEN",new Operation("GET", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"CREATE",new Operation("PUT", Constants.RequiresBodyTrue, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"MKDIRS",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"APPEND",new Operation("POST",Constants.RequiresBodyTrue, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"CONCURRENTAPPEND",new Operation("POST", Constants.RequiresBodyTrue, Constants.ReturnsBodyTrue, Constants.WebHdfsExt)},
-            {"DELETE",new Operation("DELETE", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"RENAME",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"SETEXPIRY",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfsExt)},
-            {"MSCONCAT",new Operation("POST", Constants.RequiresBodyTrue, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"GETFILESTATUS",new Operation("GET", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"LISTSTATUS",new Operation("GET", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"ENUMERATEDELETEDITEMS",new Operation("GET", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"RESTOREDELETEDITEMS",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"SETTIMES",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"CHECKACCESS",new Operation("GET", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"SETPERMISSION",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"MODIFYACLENTRIES",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"SETACL",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"SETOWNER",new Operation("PUT",Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"REMOVEACLENTRIES",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"REMOVEACL",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"REMOVEDEFAULTACL",new Operation("PUT", Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
-            {"GETACLSTATUS",new Operation("GET", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
-            {"GETCONTENTSUMMARY",new Operation("GET", Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"OPEN",new Operation(HttpMethod.Get, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"CREATE",new Operation(HttpMethod.Put, Constants.RequiresBodyTrue, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"MKDIRS",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"APPEND",new Operation(HttpMethod.Post,Constants.RequiresBodyTrue, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"CONCURRENTAPPEND",new Operation(HttpMethod.Post, Constants.RequiresBodyTrue, Constants.ReturnsBodyTrue, Constants.WebHdfsExt)},
+            {"DELETE",new Operation(HttpMethod.Delete, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"RENAME",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"SETEXPIRY",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfsExt)},
+            {"MSCONCAT",new Operation(HttpMethod.Post, Constants.RequiresBodyTrue, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"GETFILESTATUS",new Operation(HttpMethod.Get, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"LISTSTATUS",new Operation(HttpMethod.Get, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"ENUMERATEDELETEDITEMS",new Operation(HttpMethod.Get, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"RESTOREDELETEDITEMS",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"SETTIMES",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"CHECKACCESS",new Operation(HttpMethod.Get, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"SETPERMISSION",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"MODIFYACLENTRIES",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"SETACL",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"SETOWNER",new Operation(HttpMethod.Put,Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"REMOVEACLENTRIES",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"REMOVEACL",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"REMOVEDEFAULTACL",new Operation(HttpMethod.Put, Constants.RequiresBodyFalse, Constants.ReturnsBodyFalse, Constants.WebHdfs)},
+            {"GETACLSTATUS",new Operation(HttpMethod.Get, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
+            {"GETCONTENTSUMMARY",new Operation(HttpMethod.Get, Constants.RequiresBodyFalse, Constants.ReturnsBodyTrue, Constants.WebHdfs)},
         };
     }
     

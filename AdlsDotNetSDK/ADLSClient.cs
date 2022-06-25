@@ -130,6 +130,10 @@ namespace Microsoft.Azure.DataLake.Store
 
         private volatile bool _useConditionalCreateWithOverwrite = false;
 
+        /// <summary>
+        /// Http Client for making calls
+        /// </summary>
+        public readonly HttpClient HttpClient;
         #endregion
 
         #region Constructors
@@ -181,7 +185,7 @@ namespace Microsoft.Azure.DataLake.Store
 #if NETSTANDARD1_4
                 dotNetVersion = "NETSTANDARD1_4";
 #else
-                dotNetVersion="NETCOREAPP1_1";
+                dotNetVersion="NETCOREAPP3_1";
 #endif
 #endif
             }
@@ -200,8 +204,9 @@ namespace Microsoft.Azure.DataLake.Store
 
         }
 
-        internal AdlsClient(string accnt, long clientId, bool skipAccntValidation = false)
+        internal AdlsClient(string accnt, long clientId, HttpClient httpClient, bool skipAccntValidation = false)
         {
+            HttpClient = httpClient;
             AccountFQDN = accnt.Trim();
             if (!skipAccntValidation && !IsValidAccount(AccountFQDN))
             {
@@ -214,12 +219,12 @@ namespace Microsoft.Azure.DataLake.Store
             }
         }
 
-        internal AdlsClient(string accnt, long clientId, string token, bool skipAccntValidation = false) : this(accnt, clientId, skipAccntValidation)
+        internal AdlsClient(string accnt, long clientId, string token, HttpClient httpClient, bool skipAccntValidation = false) : this(accnt, clientId, httpClient, skipAccntValidation)
         {
             AccessToken = token;
         }
 
-        internal AdlsClient(string accnt, long clientId, ServiceClientCredentials creds, bool skipAccntValidation = false) : this(accnt, clientId, skipAccntValidation)
+        internal AdlsClient(string accnt, long clientId, ServiceClientCredentials creds, HttpClient httpClient, bool skipAccntValidation = false) : this(accnt, clientId, httpClient, skipAccntValidation)
         {
             AccessProvider = creds;
         }
@@ -236,10 +241,11 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         /// <param name="accnt">Azure data lake store account name including full domain name (e.g. contoso.azuredatalake.net)</param>
         /// <param name="token">Token</param>
+        /// <param name="httpClient">HttpClient</param>
         /// <returns>AdlsClient</returns>
-        internal static AdlsClient CreateClientWithoutAccntValidation(string accnt, string token)
+        internal static AdlsClient CreateClientWithoutAccntValidation(string accnt, string token, HttpClient httpClient)
         {
-            return new AdlsClient(accnt, Interlocked.Increment(ref _atomicClientId), token, true);
+            return new AdlsClient(accnt, Interlocked.Increment(ref _atomicClientId), token, httpClient, true);
         }
 
         /// <summary>
@@ -249,10 +255,11 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         /// <param name="accountFqdn">Azure data lake store account name including full domain name (e.g. contoso.azuredatalakestore.net)</param>
         /// <param name="token">Full authorization Token e.g. Bearer abcddsfere.....</param>
+        /// <param name="httpClient">HttpClient</param>
         /// <returns>AdlsClient</returns>
-        public static AdlsClient CreateClient(string accountFqdn, string token)
+        public static AdlsClient CreateClient(string accountFqdn, string token, HttpClient httpClient)
         {
-            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), token);
+            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), token, httpClient);
         }
 
         /// <summary>
@@ -262,10 +269,11 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         /// <param name="accountFqdn">Azure data lake store account name including full domain name  (e.g. contoso.azuredatalakestore.net)</param>
         /// <param name="creds">Credentials that retrieves the Auth token</param>
+        /// <param name="httpClient">HttpClient</param>
         /// <returns>AdlsClient</returns>
-        public static AdlsClient CreateClient(string accountFqdn, ServiceClientCredentials creds)
+        public static AdlsClient CreateClient(string accountFqdn, ServiceClientCredentials creds, HttpClient httpClient)
         {
-            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), creds);
+            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), creds, httpClient);
         }
         #endregion
 

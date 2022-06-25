@@ -1,13 +1,16 @@
-﻿using System;
-using System.IO;
-using System.Net;
-using System.Text;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Diagnostics;
-using System.Threading;
+﻿using Newtonsoft.Json;
 using NLog;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.Azure.DataLake.Store
 {
@@ -178,23 +181,23 @@ namespace Microsoft.Azure.DataLake.Store
             else resp.IsSuccessful = false;
         }
 
-        private static void PostPowershellLogDetails(HttpWebRequest request, HttpWebResponse response)
+        private static void PostPowershellLogDetails(HttpRequestMessage request, HttpResponseMessage response)
         {
             if (WebTransportPowershellLog.IsDebugEnabled)
             {
                 string message = $"VERB: {request.Method}{Environment.NewLine}{Environment.NewLine}RequestHeaders:{Environment.NewLine}";
                 bool firstHeader = true;
-                foreach (string requestHeader in request.Headers)
+                foreach (var requestHeader in request.Headers)
                 {
-                    if (requestHeader.Equals("Authorization"))
+                    if (requestHeader.Key.Equals("Authorization"))
                     {
                         message += (!firstHeader ? Environment.NewLine : "") +
-                                   $"[AuthorizationHeaderLength:{request.Headers["Authorization"].Length}]";
+                                   $"[AuthorizationHeaderLength:{requestHeader.Value.FirstOrDefault().Length}]";
                     }
                     else
                     {
                         message += (!firstHeader ? Environment.NewLine : "") +
-                                   $"[{requestHeader}:{request.Headers[requestHeader]}]";
+                                   $"[{requestHeader.Key}:{requestHeader.Value}]";
                     }
 
                     firstHeader = false;
@@ -202,9 +205,9 @@ namespace Microsoft.Azure.DataLake.Store
                 message += $"{Environment.NewLine}{Environment.NewLine}";
                 message += $"ResponseStatus:{response.StatusCode}{Environment.NewLine}{Environment.NewLine}ResponseHeaders:{Environment.NewLine}";
                 firstHeader = true;
-                foreach (string responseHeader in response.Headers)
+                foreach (var responseHeader in response.Headers)
                 {
-                    message += (!firstHeader ? Environment.NewLine : "") + $"[{responseHeader}:{response.Headers[responseHeader]}]";
+                    message += (!firstHeader ? Environment.NewLine : "") + $"[{responseHeader.Key}:{responseHeader.Value.FirstOrDefault()}]";
                     firstHeader = false;
                 }
 
@@ -276,21 +279,21 @@ namespace Microsoft.Azure.DataLake.Store
         /// <param name="token">Auth token</param>
         /// <param name="opMethod">Operation method (e.g. POST/GET)</param>
         /// <param name="customHeaders">Custom headers</param>
-        private static void AssignCommonHttpHeaders(HttpWebRequest webReq, AdlsClient client, RequestOptions req, string token, string opMethod, IDictionary<string, string> customHeaders, int postRequestLength)
+        private static void AssignCommonHttpHeaders(HttpRequestMessage webReq, AdlsClient client, RequestOptions req, string token, HttpMethod opMethod, IDictionary<string, string> customHeaders, int postRequestLength)
         {
 
-            webReq.Headers["Authorization"] = token;
+            webReq.Headers.Add("Authorization", token);
             string latencyHeader = LatencyTracker.GetLatency();
             if (!string.IsNullOrEmpty(latencyHeader))
             {
-                webReq.Headers["x-ms-adl-client-latency"] = latencyHeader;
+                webReq.Headers.Add("x-ms-adl-client-latency", latencyHeader);
+                //webReq.Headers["x-ms-adl-client-latency"] = latencyHeader;
             }
 
             if (client.ContentEncoding != null && postRequestLength > MinDataSizeForCompression)
             {
-
-                webReq.Headers["Content-Encoding"] = client.ContentEncoding;
-
+                webReq.Headers.Add("Content-Encoding", client.ContentEncoding);
+                //webReq.Headers["Content-Encoding"] = client.ContentEncoding;
             }
 
             if (client.DipIp != null && !req.IgnoreDip)
@@ -298,7 +301,8 @@ namespace Microsoft.Azure.DataLake.Store
 #if NET452
                 webReq.Host = client.AccountFQDN;
 #else
-                webReq.Headers["Host"] = client.AccountFQDN;
+                webReq.Headers.Add("Host", client.AccountFQDN);
+                //webReq.Headers["Host"] = client.AccountFQDN;
 #endif
             }
 
@@ -312,7 +316,8 @@ namespace Microsoft.Azure.DataLake.Store
                 webReq.KeepAlive = false;
 
 #else
-                webReq.Headers["Connection"] = "Close";
+                webReq.Headers.Add("Connection", "Close");
+                //webReq.Headers["Connection"] = "Close";
 #endif
             }
 
@@ -321,12 +326,17 @@ namespace Microsoft.Azure.DataLake.Store
                 string contentType;
                 if (customHeaders.TryGetValue("Content-Type", out contentType))
                 {
-                    webReq.ContentType = contentType;
+                    //webReq.Headers = contentType;
+                    webReq.Content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                 }
                 foreach (var key in customHeaders.Keys)
                 {
                     if (!HeadersNotToBeCopied.Contains(key))
-                        webReq.Headers[key] = customHeaders[key];
+                    {
+                        //webReq.Headers[key] = customHeaders[key];
+                        webReq.Headers.Add(key, customHeaders[key]);
+                    }
+                        
                 }
             }
 #if NET452
@@ -334,23 +344,28 @@ namespace Microsoft.Azure.DataLake.Store
             webReq.ServicePoint.UseNagleAlgorithm = false;
             webReq.ServicePoint.Expect100Continue = false;
 #else
-            webReq.Headers["User-Agent"] = client.GetUserAgent();
+            //webReq.Headers.Add("User-Agent", client.GetUserAgent());
+            //webReq.Headers["User-Agent"] = client.GetUserAgent();
+
+            webReq.Headers.UserAgent.Add(new ProductInfoHeaderValue("GeospatialDataLake", "1.0"));
+            //config.DefaultRequestHeaders.UserAgent.Add(commentValue);
 #endif
-            webReq.Headers["x-ms-client-request-id"] = req.RequestId;
-            webReq.Method = opMethod;
+            webReq.Headers.Add("x-ms-client-request-id", req.RequestId);
+            //webReq.Headers["x-ms-client-request-id"] = req.RequestId;
+            webReq.Method =  opMethod;
         }
         /// <summary>
         /// Sets the WebRequest length
         /// </summary>
         /// <param name="webReq">HttpWebRequest</param>
         /// <param name="count">Content length</param>
-        private static void SetWebRequestContentLength(HttpWebRequest webReq, int count)
+        private static void SetWebRequestContentLength(HttpRequestMessage webReq, int count)
         {
 #if NET452
             webReq.ContentLength = count;
 #else
             // Set the ContentLength property of the WebRequest.  
-            webReq.Headers["Content-Length"] = Convert.ToString(count);
+            webReq.Headers.Add("Content-Length", Convert.ToString(count));
 #endif
         }
         private static CancellationTokenSource GetCancellationTokenSourceForTimeout(RequestOptions req)
@@ -367,9 +382,9 @@ namespace Microsoft.Azure.DataLake.Store
         /// <param name="responseData">ResponseData structure</param>
         /// <param name="isResponseError">True when we are initializing error response stream else false</param>
         /// <returns>False if the response is not chunked but the content length is 0 else true</returns>
-        private static bool InitializeResponseData(HttpWebResponse webResponse, ref ByteBuffer responseData, bool isResponseError = false)
+        private static bool InitializeResponseData(HttpResponseMessage webResponse, ref ByteBuffer responseData, bool isResponseError = false)
         {
-            string encoding = webResponse.Headers["Transfer-Encoding"];
+            string encoding = webResponse.Headers.TransferEncoding.ToString();
             if (!string.IsNullOrEmpty(encoding) && encoding.Equals("chunked"))
             {
                 // If the error response is from our FE, then it wont be chunked. If the error is from IIS
@@ -397,11 +412,11 @@ namespace Microsoft.Azure.DataLake.Store
                 //Initialize the response based on content length property
                 if (responseData.Data == null) //For OPEN operation the data might not be chunked
                 {
-                    if (webResponse.ContentLength > 0)
+                    if (webResponse.Content.Headers.ContentLength > 0)
                     {
-                        responseData.Data = new byte[webResponse.ContentLength];
+                        responseData.Data = new byte[(int)webResponse.Content.Headers.ContentLength];
                         responseData.Offset = 0;
-                        responseData.Count = (int)webResponse.ContentLength;
+                        responseData.Count = (int)webResponse.Content.Headers.ContentLength;
                     }
                     else
                     {
@@ -422,85 +437,85 @@ namespace Microsoft.Azure.DataLake.Store
         /// <param name="webReq">Http Web request</param>
         /// <param name="timeoutCancelToken">Cancel Token for timeout</param>
         /// <param name="actualCancelToken">Cancel Token sent by user</param>
-        private static void HandleWebException(WebException e, OperationResponse resp, string path, string requestId, string token, HttpWebRequest webReq, CancellationToken timeoutCancelToken, CancellationToken actualCancelToken = default(CancellationToken))
-        {
-            // The status property will be set to RequestCanceled after Abort.
-            if (timeoutCancelToken.IsCancellationRequested)
-            {
-                // Type should not be of operationcancelledexception otherwise this wont be retried
-                resp.Ex = new Exception("Operation timed out");
-            }
-            else if (actualCancelToken.IsCancellationRequested)
-            {
-                resp.Ex = new OperationCanceledException(actualCancelToken);
-            }
-            //This the case where some exception occured in server but server returned a response
-            else if (e.Status == WebExceptionStatus.ProtocolError)
-            {
-                try
-                {
-                    using (var errorResponse = (HttpWebResponse)e.Response)
-                    {
-                        PostPowershellLogDetails(webReq, errorResponse);
-                        resp.HttpStatus = errorResponse.StatusCode;
-                        resp.RequestId = errorResponse.Headers["x-ms-request-id"];
-                        if (resp.HttpStatus == HttpStatusCode.Unauthorized && TokenLog.IsDebugEnabled)
-                        {
-                            string tokenLogLine =
-                                $"HTTPRequest,HTTP401,cReqId:{requestId},sReqId:{resp.RequestId},path:{path},token:{token}";
-                            TokenLog.Debug(tokenLogLine);
-                        }
-                        resp.HttpMessage = errorResponse.StatusDescription;
-                        ByteBuffer errorResponseData = default(ByteBuffer);
-                        if (!InitializeResponseData(errorResponse, ref errorResponseData, true))
-                        {
-                            throw new ArgumentException("ContentLength of error response stream is not set");
-                        }
-                        using (Stream errorStream = errorResponse.GetResponseStream())
-                        {
-                            // Reading the data from the error response into a byte array is necessary to show the actual error data as a part of the 
-                            // error message in case JSON parsing does not work. We read the bytes and then pass it back to JsonTextReader using a memorystream
-                            int noBytes;
-                            int totalLengthToRead = errorResponseData.Count;
-                            do
-                            {
-                                noBytes = errorStream.Read(errorResponseData.Data, errorResponseData.Offset, totalLengthToRead);
-                                errorResponseData.Offset += noBytes;
-                                totalLengthToRead -= noBytes;
+        //private static void HandleWebException(HttpRequestException e, OperationResponse resp, string path, string requestId, string token, HttpRequestMessage webReq, CancellationToken timeoutCancelToken, CancellationToken actualCancelToken = default(CancellationToken))
+        //{
+        //    // The status property will be set to RequestCanceled after Abort.
+        //    if (timeoutCancelToken.IsCancellationRequested)
+        //    {
+        //        // Type should not be of operationcancelledexception otherwise this wont be retried
+        //        resp.Ex = new Exception("Operation timed out");
+        //    }
+        //    else if (actualCancelToken.IsCancellationRequested)
+        //    {
+        //        resp.Ex = new OperationCanceledException(actualCancelToken);
+        //    }
+        //    //This the case where some exception occured in server but server returned a response
+        //    else if ( e.InnerException is WebException && ((WebException)e.InnerException).Status == WebExceptionStatus.ProtocolError)
+        //    {
+        //        try
+        //        {
+        //            using (var errorResponse = (HttpWebResponse)e.Response)
+        //            {
+        //                PostPowershellLogDetails(webReq, errorResponse);
+        //                resp.HttpStatus = errorResponse.StatusCode;
+        //                resp.RequestId = errorResponse.Headers["x-ms-request-id"];
+        //                if (resp.HttpStatus == HttpStatusCode.Unauthorized && TokenLog.IsDebugEnabled)
+        //                {
+        //                    string tokenLogLine =
+        //                        $"HTTPRequest,HTTP401,cReqId:{requestId},sReqId:{resp.RequestId},path:{path},token:{token}";
+        //                    TokenLog.Debug(tokenLogLine);
+        //                }
+        //                resp.HttpMessage = errorResponse.StatusDescription;
+        //                ByteBuffer errorResponseData = default(ByteBuffer);
+        //                if (!InitializeResponseData(errorResponse, ref errorResponseData, true))
+        //                {
+        //                    throw new ArgumentException("ContentLength of error response stream is not set");
+        //                }
+        //                using (Stream errorStream = errorResponse.GetResponseStream())
+        //                {
+        //                    // Reading the data from the error response into a byte array is necessary to show the actual error data as a part of the 
+        //                    // error message in case JSON parsing does not work. We read the bytes and then pass it back to JsonTextReader using a memorystream
+        //                    int noBytes;
+        //                    int totalLengthToRead = errorResponseData.Count;
+        //                    do
+        //                    {
+        //                        noBytes = errorStream.Read(errorResponseData.Data, errorResponseData.Offset, totalLengthToRead);
+        //                        errorResponseData.Offset += noBytes;
+        //                        totalLengthToRead -= noBytes;
 
-                            } while (noBytes > 0 && totalLengthToRead > 0);
-                            // Pass errorResponseData.Offset instead of errorResponseData.Count because errorResponseData.Offset can be less than errorResponseData.Count 
-                            //This will be the case mostly for chunked error response where we initialize the byte with 1000 bytes
-                            ParseRemoteError(errorResponseData.Data, errorResponseData.Offset, resp, errorResponse.Headers["Content-Type"]);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    resp.Ex = ex;
-                }
+        //                    } while (noBytes > 0 && totalLengthToRead > 0);
+        //                    // Pass errorResponseData.Offset instead of errorResponseData.Count because errorResponseData.Offset can be less than errorResponseData.Count 
+        //                    //This will be the case mostly for chunked error response where we initialize the byte with 1000 bytes
+        //                    ParseRemoteError(errorResponseData.Data, errorResponseData.Offset, resp, errorResponse.Headers["Content-Type"]);
+        //                }
+        //            }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            resp.Ex = ex;
+        //        }
 
-            }
-            else//No response stream is returned, Dont know what to do, so just store the exception
-            {
-                switch (e.Status)
-                {
-                    case WebExceptionStatus.NameResolutionFailure:
-                    case WebExceptionStatus.ServerProtocolViolation:
-                    case WebExceptionStatus.ConnectFailure:
-                    case WebExceptionStatus.ConnectionClosed:
-                    case WebExceptionStatus.KeepAliveFailure:
-                    case WebExceptionStatus.ReceiveFailure:
-                    case WebExceptionStatus.SendFailure:
-                    case WebExceptionStatus.Timeout:
-                    case WebExceptionStatus.UnknownError:
-                        resp.ConnectionFailure = true;
-                        break;
-                }
-                resp.Ex = e;
+        //    }
+        //    else//No response stream is returned, Dont know what to do, so just store the exception
+        //    {
+        //        switch (e.Status)
+        //        {
+        //            case WebExceptionStatus.NameResolutionFailure:
+        //            case WebExceptionStatus.ServerProtocolViolation:
+        //            case WebExceptionStatus.ConnectFailure:
+        //            case WebExceptionStatus.ConnectionClosed:
+        //            case WebExceptionStatus.KeepAliveFailure:
+        //            case WebExceptionStatus.ReceiveFailure:
+        //            case WebExceptionStatus.SendFailure:
+        //            case WebExceptionStatus.Timeout:
+        //            case WebExceptionStatus.UnknownError:
+        //                resp.ConnectionFailure = true;
+        //                break;
+        //        }
+        //        resp.Ex = e;
 
-            }
-        }
+        //    }
+        //}
         /// <summary>
         /// Parses RemoteException and populates the remote error fields in OperationResponse
         /// </summary>
@@ -666,8 +681,11 @@ namespace Microsoft.Azure.DataLake.Store
             try
             {
                 // Create does not throw WebException
-                HttpWebRequest webReq = (HttpWebRequest)WebRequest.Create(urlString);
-
+                //HttpWebRequest webReq = (HttpWebRequest)WebRequest.Create(urlString);
+                using var webReq = new HttpRequestMessage()
+                {
+                    RequestUri = new Uri(urlString)
+                };
 
                 //If operation is cancelled then stop
                 cancelToken.ThrowIfCancellationRequested();
@@ -706,15 +724,13 @@ namespace Microsoft.Azure.DataLake.Store
                         {
                             //This point onwards if operation is cancelled http request is aborted
                             linkedCts.Token.Register(OnCancel, webReq);
-                            if (!op.Method.Equals("GET"))
+
+                            if (!op.Method.Equals(HttpMethod.Get))
                             {
                                 if (op.RequiresBody && requestData.Data != null)
                                 {
-                                    using (Stream ipStream = GetCompressedStream(await webReq.GetRequestStreamAsync().ConfigureAwait(false), client, requestData.Count))
-                                    {
-                                        await ipStream.WriteAsync(requestData.Data, requestData.Offset, requestData.Count,
-                                            linkedCts.Token).ConfigureAwait(false);
-                                    }
+                                    HttpContent metaDataContent = new ByteArrayContent(requestData.Data, requestData.Offset, requestData.Count);
+                                    webReq.Content = metaDataContent;
                                 }
                                 else
                                 {
@@ -722,11 +738,11 @@ namespace Microsoft.Azure.DataLake.Store
                                 }
                             }
 
-                            using (var webResponse = (HttpWebResponse)await webReq.GetResponseAsync().ConfigureAwait(false))
+                            using (var webResponse = await client.HttpClient.SendAsync(webReq, linkedCts.Token).ConfigureAwait(false))
                             {
                                 resp.HttpStatus = webResponse.StatusCode;
-                                resp.HttpMessage = webResponse.StatusDescription;
-                                resp.RequestId = webResponse.Headers["x-ms-request-id"];
+                                resp.HttpMessage = webResponse.ReasonPhrase;
+                                resp.RequestId = webResponse.Headers.GetValues("x-ms-request-id").FirstOrDefault();
                                 PostPowershellLogDetails(webReq, webResponse);
                                 if (op.ReturnsBody)
                                 {
@@ -737,7 +753,7 @@ namespace Microsoft.Azure.DataLake.Store
                                     }
 
                                     int totalBytes = 0;
-                                    using (Stream opStream = webResponse.GetResponseStream())
+                                    using (Stream opStream = await webResponse.Content.ReadAsStreamAsync().ConfigureAwait(false))
                                     {
 
                                         int noBytes;
@@ -762,10 +778,9 @@ namespace Microsoft.Azure.DataLake.Store
                         }
                         catch (WebException e)
                         {
-                            HandleWebException(e, resp, path, req.RequestId, token, webReq, timeoutCancellationTokenSource.Token, cancelToken);
+                            //HandleWebException(e, resp, path, req.RequestId, token, webReq, timeoutCancellationTokenSource.Token, cancelToken);
                         }
                     }
-
                 }
 
             }// Any unhandled exception is caught here
@@ -859,15 +874,18 @@ namespace Microsoft.Azure.DataLake.Store
             try
             {
                 // Create does not throw WebException
-                HttpWebRequest webReq = (HttpWebRequest)WebRequest.Create(urlString);
+                //HttpWebRequest webReq = (HttpWebRequest)WebRequest.Create(urlString
 
-                // If security certificate is used then no need to pass token
-                if (req.ClientCert != null)
+                using var webReq = new HttpRequestMessage()
                 {
-#if NET452
-                    webReq.ClientCertificates.Add(req.ClientCert);
-#endif
-                }
+                    RequestUri = new Uri(urlString)
+                };
+
+                    // If security certificate is used then no need to pass token
+                    if (req.ClientCert != null)
+                    {
+
+                    }
 
                 Stopwatch watch = Stopwatch.StartNew();
                 token = client.GetTokenAsync().GetAwaiter().GetResult();
@@ -893,33 +911,24 @@ namespace Microsoft.Azure.DataLake.Store
                     {
                         //This point onwards if operation is cancelled http request is aborted
                         timeoutCancellationTokenSource.Token.Register(OnCancel, webReq);
-                        if (!op.Method.Equals("GET"))
+                        if (!op.Method.Equals(HttpMethod.Get))
                         {
                             if (op.RequiresBody && requestData.Data != null)
                             {
-#if NET452
-                                using (Stream ipStream = GetCompressedStream(webReq.GetRequestStream(), client, requestData.Count))
-#else
-                            using (Stream ipStream = GetCompressedStream(webReq.GetRequestStreamAsync().GetAwaiter().GetResult(), client, requestData.Count))
-#endif
-                                {
-                                    ipStream.Write(requestData.Data, requestData.Offset, requestData.Count);
-                                }
+                                HttpContent metaDataContent = new ByteArrayContent(requestData.Data, requestData.Offset, requestData.Count);
+                                webReq.Content = metaDataContent;
                             }
                             else
                             {
                                 SetWebRequestContentLength(webReq, 0);
                             }
                         }
-#if NET452
-                        using (var webResponse = (HttpWebResponse)webReq.GetResponse())
-#else
-                    using (var webResponse = (HttpWebResponse)webReq.GetResponseAsync().GetAwaiter().GetResult())
-#endif
+
+                        using var webResponse = client.HttpClient.SendAsync(webReq, timeoutCancellationTokenSource.Token).GetAwaiter().GetResult();
                         {
                             resp.HttpStatus = webResponse.StatusCode;
-                            resp.HttpMessage = webResponse.StatusDescription;
-                            resp.RequestId = webResponse.Headers["x-ms-request-id"];
+                            resp.HttpMessage = webResponse.ReasonPhrase;
+                            resp.RequestId = webResponse.Headers.GetValues("x-ms-request-id").FirstOrDefault();
                             PostPowershellLogDetails(webReq, webResponse);
                             if (op.ReturnsBody)
                             {
@@ -930,7 +939,7 @@ namespace Microsoft.Azure.DataLake.Store
                                 }
 
                                 int totalBytes = 0;
-                                using (Stream opStream = webResponse.GetResponseStream())
+                                using (Stream opStream = webResponse.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
                                 {
 
                                     int noBytes;
@@ -954,7 +963,7 @@ namespace Microsoft.Azure.DataLake.Store
                     }
                     catch (WebException e)
                     {
-                        HandleWebException(e, resp, path, req.RequestId, token, webReq, timeoutCancellationTokenSource.Token);
+                        //HandleWebException(e, resp, path, req.RequestId, token, webReq, timeoutCancellationTokenSource.Token);
                     }
                 }
             }// Any unhandled exception is caught here
@@ -963,11 +972,9 @@ namespace Microsoft.Azure.DataLake.Store
                 resp.Ex = e;
 
             }
-
+            
             return null;
         }
         #endregion
-
-
     }
 }
