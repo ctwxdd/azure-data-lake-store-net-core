@@ -691,9 +691,9 @@ namespace Microsoft.Azure.DataLake.Store
 /// <param name="createParent">If true creates any non-existing parent directories</param>
 /// <returns>Output stream</returns>
 internal virtual AdlsOutputStream CreateFile(string filename, IfExists mode, AdlsArrayPool<byte> bufferPool, int bufferCapacity, string octalPermission = null, bool createParent = true)
-    {
-        return CreateFileAsync(filename, mode, bufferPool, bufferCapacity, octalPermission, createParent).GetAwaiter().GetResult();
-    }
+        {
+            return CreateFileAsync(filename, mode, bufferPool, bufferCapacity, octalPermission, createParent).GetAwaiter().GetResult();
+        }
 
         /// <summary>
         /// Asynchronous API that creates a file and returns the stream to write data to that file in ADLS. The file is opened with exclusive 
