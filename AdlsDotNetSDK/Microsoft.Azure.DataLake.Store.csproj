@@ -1,36 +1,60 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
-    <PackageId>Microsoft.Azure.DataLake.Store.Core</PackageId>
-      <AssemblyVersion>1.0.0</AssemblyVersion>
-      <Version>1.0.0</Version>
-    <FileVersion>$(Version)</FileVersion>
-    <PackageVersion>$(Version)</PackageVersion>
-    <Authors>Microsoft</Authors>
-    <Description>Microsoft Azure Data Lake Store Filesystem Library for Dot Net</Description>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-    <PackageReleaseNotes>Fix null character in the exception when error is recieved as chunked response</PackageReleaseNotes>
-    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
-    <PackageLicenseUrl>https://raw.githubusercontent.com/Azure/azure-data-lake-store-net/master/LICENSE</PackageLicenseUrl>
-    <PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/azure/azure-data-lake-store-net</PackageProjectUrl>
-    <PackageTags>adls sdk datalake azure</PackageTags>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <SignAssembly>true</SignAssembly>
-    <DelaySign>true</DelaySign>
-    <AssemblyOriginatorKeyFile>..\tools\MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
-    <AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.10" />
-    <PackageReference Include="System.Net.Requests" Version="4.3.0" />
-    <PackageReference Include="System.Buffers" Version="4.3.0" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFrameworks>netstandard2.0;net452;netstandard1.4;netcoreapp1.1</TargetFrameworks>
+		<PackageId>Microsoft.Azure.DataLake.Store</PackageId>
+		<AssemblyVersion>1.0.0</AssemblyVersion>
+		<Version>1.1.24</Version>
+		<FileVersion>$(Version)</FileVersion>
+		<PackageVersion>$(Version)</PackageVersion>
+		<Authors>Microsoft</Authors>
+		<Description>Microsoft Azure Data Lake Store Filesystem Library for Dot Net</Description>
+		<PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+		<PackageReleaseNotes>Fix null character in the exception when error is recieved as chunked response</PackageReleaseNotes>
+		<Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
+		<PackageLicenseUrl>https://raw.githubusercontent.com/Azure/azure-data-lake-store-net/master/LICENSE</PackageLicenseUrl>
+		<PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
+		<PackageProjectUrl>https://github.com/azure/azure-data-lake-store-net</PackageProjectUrl>
+		<PackageTags>adls sdk datalake azure</PackageTags>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<SignAssembly>true</SignAssembly>
+		<DelaySign>true</DelaySign>
+		<AssemblyOriginatorKeyFile>..\tools\MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+	</PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-    <PackageReference Include="NLog" Version="4.7.4" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Remove="Platforms\**\*.cs" />
+		<None Include="Platforms\**\*.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Rest.ClientRuntime" Version="2.3.10" />
+		<PackageReference Include="System.Net.Requests" Version="4.3.0" />
+		<PackageReference Include="System.Buffers" Version="4.3.0" />
+	</ItemGroup>
+
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+		<Compile Include="Platforms\NETStandard2.0\**\*.cs" />
+		<PackageReference Include="NLog" Version="4.7.4" />
+		<PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+	</ItemGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'net452'">
+		<Reference Include="System.Net.Http" />
+		<Reference Include="System.Management" />
+		<PackageReference Include="NLog" Version="4.4.12" />
+		<PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
+	</ItemGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard1.4'">
+		<PackageReference Include="System.Threading.Thread" Version="4.3.0" />
+		<PackageReference Include="NLog" Version="4.5.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
+	</ItemGroup>
+	
+	<ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp1.1'">
+		<PackageReference Include="NLog" Version="4.5.0" />
+		<PackageReference Include="Newtonsoft.Json" Version="10.0.2" />
+	</ItemGroup>
 	
 </Project>

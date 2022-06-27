@@ -49,7 +49,7 @@ namespace Microsoft.Azure.DataLake.Store
     /// If an application wants to perform multi-threaded operations using this SDK it is highly recomended to set ServicePointManager.DefaultConnectionLimit to the number of threads application wants the sdk to use before creating any instance of AdlsClient.
     /// By default ServicePointManager.DefaultConnectionLimit is set to 2. Adls use NLog for logging. adls.dotnet.* is the name of the logger to obtain all logs.
     /// </summary>
-    public class AdlsClient
+    public partial class AdlsClient
     {
         #region Properties
 
@@ -130,10 +130,6 @@ namespace Microsoft.Azure.DataLake.Store
 
         private volatile bool _useConditionalCreateWithOverwrite = false;
 
-        /// <summary>
-        /// Http Client for making calls
-        /// </summary>
-        public readonly HttpClient HttpClient;
         #endregion
 
         #region Constructors
@@ -184,8 +180,10 @@ namespace Microsoft.Azure.DataLake.Store
                          System.Runtime.InteropServices.RuntimeInformation.OSArchitecture;
 #if NETSTANDARD1_4
                 dotNetVersion = "NETSTANDARD1_4";
+#elif NETSTANDARD2_0
+                dotNetVersion = "NETSTANDARD2_0";
 #else
-                dotNetVersion="NETCOREAPP3_1";
+                dotNetVersion = "NETCOREAPP1_1";
 #endif
 #endif
             }
@@ -204,9 +202,8 @@ namespace Microsoft.Azure.DataLake.Store
 
         }
 
-        internal AdlsClient(string accnt, long clientId, HttpClient httpClient, bool skipAccntValidation = false)
+        internal AdlsClient(string accnt, long clientId, bool skipAccntValidation = false)
         {
-            HttpClient = httpClient;
             AccountFQDN = accnt.Trim();
             if (!skipAccntValidation && !IsValidAccount(AccountFQDN))
             {
@@ -219,12 +216,12 @@ namespace Microsoft.Azure.DataLake.Store
             }
         }
 
-        internal AdlsClient(string accnt, long clientId, string token, HttpClient httpClient, bool skipAccntValidation = false) : this(accnt, clientId, httpClient, skipAccntValidation)
+        internal AdlsClient(string accnt, long clientId, string token, bool skipAccntValidation = false) : this(accnt, clientId, skipAccntValidation)
         {
             AccessToken = token;
         }
 
-        internal AdlsClient(string accnt, long clientId, ServiceClientCredentials creds, HttpClient httpClient, bool skipAccntValidation = false) : this(accnt, clientId, httpClient, skipAccntValidation)
+        internal AdlsClient(string accnt, long clientId, ServiceClientCredentials creds, bool skipAccntValidation = false) : this(accnt, clientId, skipAccntValidation)
         {
             AccessProvider = creds;
         }
@@ -241,11 +238,10 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         /// <param name="accnt">Azure data lake store account name including full domain name (e.g. contoso.azuredatalake.net)</param>
         /// <param name="token">Token</param>
-        /// <param name="httpClient">HttpClient</param>
         /// <returns>AdlsClient</returns>
-        internal static AdlsClient CreateClientWithoutAccntValidation(string accnt, string token, HttpClient httpClient)
+        internal static AdlsClient CreateClientWithoutAccntValidation(string accnt, string token)
         {
-            return new AdlsClient(accnt, Interlocked.Increment(ref _atomicClientId), token, httpClient, true);
+            return new AdlsClient(accnt, Interlocked.Increment(ref _atomicClientId), token, true);
         }
 
         /// <summary>
@@ -255,11 +251,10 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         /// <param name="accountFqdn">Azure data lake store account name including full domain name (e.g. contoso.azuredatalakestore.net)</param>
         /// <param name="token">Full authorization Token e.g. Bearer abcddsfere.....</param>
-        /// <param name="httpClient">HttpClient</param>
         /// <returns>AdlsClient</returns>
-        public static AdlsClient CreateClient(string accountFqdn, string token, HttpClient httpClient)
+        public static AdlsClient CreateClient(string accountFqdn, string token)
         {
-            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), token, httpClient);
+            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), token);
         }
 
         /// <summary>
@@ -269,11 +264,10 @@ namespace Microsoft.Azure.DataLake.Store
         /// </summary>
         /// <param name="accountFqdn">Azure data lake store account name including full domain name  (e.g. contoso.azuredatalakestore.net)</param>
         /// <param name="creds">Credentials that retrieves the Auth token</param>
-        /// <param name="httpClient">HttpClient</param>
         /// <returns>AdlsClient</returns>
-        public static AdlsClient CreateClient(string accountFqdn, ServiceClientCredentials creds, HttpClient httpClient)
+        public static AdlsClient CreateClient(string accountFqdn, ServiceClientCredentials creds)
         {
-            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), creds, httpClient);
+            return new AdlsClient(accountFqdn, Interlocked.Increment(ref _atomicClientId), creds);
         }
         #endregion
 
@@ -642,10 +636,10 @@ namespace Microsoft.Azure.DataLake.Store
 
             if (checkExists && entry.Type == DirectoryEntryType.DIRECTORY)
             {
-                throw new AdlsException("Cannot overwrite directory "+path);
+                throw new AdlsException("Cannot overwrite directory " + path);
             }
 
-            if(checkExists)
+            if (checkExists)
             {
 
                 resp = new OperationResponse();
@@ -683,20 +677,20 @@ namespace Microsoft.Azure.DataLake.Store
                 throw GetExceptionFromResponse(resp, $"Error in creating file {path}.");
             }
         }
-/// <summary>
-/// Synchronous API that creates a file and returns the stream to write data to that file in ADLS. The file is opened with exclusive 
-/// access - any attempt to open the same file for append will fail while this stream is open.  
-/// 
-/// Threading: The returned stream is not thread-safe.
-/// </summary>
-/// <param name="filename">File name</param>
-/// <param name="mode">Overwrites the existing file if the mode is Overwrite</param>
-/// <param name="bufferPool">Passed buffer pool</param>
-/// <param name="bufferCapacity"></param>
-/// <param name="octalPermission">Octal permission string</param>
-/// <param name="createParent">If true creates any non-existing parent directories</param>
-/// <returns>Output stream</returns>
-internal virtual AdlsOutputStream CreateFile(string filename, IfExists mode, AdlsArrayPool<byte> bufferPool, int bufferCapacity, string octalPermission = null, bool createParent = true)
+        /// <summary>
+        /// Synchronous API that creates a file and returns the stream to write data to that file in ADLS. The file is opened with exclusive 
+        /// access - any attempt to open the same file for append will fail while this stream is open.  
+        /// 
+        /// Threading: The returned stream is not thread-safe.
+        /// </summary>
+        /// <param name="filename">File name</param>
+        /// <param name="mode">Overwrites the existing file if the mode is Overwrite</param>
+        /// <param name="bufferPool">Passed buffer pool</param>
+        /// <param name="bufferCapacity"></param>
+        /// <param name="octalPermission">Octal permission string</param>
+        /// <param name="createParent">If true creates any non-existing parent directories</param>
+        /// <returns>Output stream</returns>
+        internal virtual AdlsOutputStream CreateFile(string filename, IfExists mode, AdlsArrayPool<byte> bufferPool, int bufferCapacity, string octalPermission = null, bool createParent = true)
         {
             return CreateFileAsync(filename, mode, bufferPool, bufferCapacity, octalPermission, createParent).GetAwaiter().GetResult();
         }

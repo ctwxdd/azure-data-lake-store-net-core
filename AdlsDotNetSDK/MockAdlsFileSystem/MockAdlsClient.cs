@@ -34,7 +34,11 @@ namespace Microsoft.Azure.DataLake.Store.MockAdlsFileSystem
         private static string accountName;
         private static Random random = new Random();
 
+#if NETSTANDARD2_0
         private MockAdlsClient(string accountNm) : base(accountNm, 1, new System.Net.Http.HttpClient())
+#else
+        private MockAdlsClient(string accountNm) : base(accountNm, 1)
+#endif
         {
             _directoryEntries = new ConcurrentDictionary<string, DirectoryEntryMetaData>();
             _trashDirectoryEntries = new ConcurrentDictionary<string, DirectoryEntryMetaData>();
