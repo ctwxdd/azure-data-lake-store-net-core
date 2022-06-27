@@ -1,7 +1,7 @@
 ﻿<Project>
   <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.props" />
   <PropertyGroup>    
-    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>    
+    <TargetFrameworks>net452;netcoreapp2.0</TargetFrameworks>    
   </PropertyGroup>
   <Import Sdk="Microsoft.NET.Sdk" Project="Sdk.targets" />
 

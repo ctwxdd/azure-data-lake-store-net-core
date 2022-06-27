@@ -183,7 +183,7 @@ namespace Microsoft.Azure.DataLake.Store
 #elif NETSTANDARD2_0
                 dotNetVersion = "NETSTANDARD2_0";
 #else
-                dotNetVersion = "NETCOREAPP1_1";
+                dotNetVersion="NETCOREAPP1_1";
 #endif
 #endif
             }
@@ -636,10 +636,10 @@ namespace Microsoft.Azure.DataLake.Store
 
             if (checkExists && entry.Type == DirectoryEntryType.DIRECTORY)
             {
-                throw new AdlsException("Cannot overwrite directory " + path);
+                throw new AdlsException("Cannot overwrite directory "+path);
             }
 
-            if (checkExists)
+            if(checkExists)
             {
 
                 resp = new OperationResponse();
@@ -677,23 +677,23 @@ namespace Microsoft.Azure.DataLake.Store
                 throw GetExceptionFromResponse(resp, $"Error in creating file {path}.");
             }
         }
-        /// <summary>
-        /// Synchronous API that creates a file and returns the stream to write data to that file in ADLS. The file is opened with exclusive 
-        /// access - any attempt to open the same file for append will fail while this stream is open.  
-        /// 
-        /// Threading: The returned stream is not thread-safe.
-        /// </summary>
-        /// <param name="filename">File name</param>
-        /// <param name="mode">Overwrites the existing file if the mode is Overwrite</param>
-        /// <param name="bufferPool">Passed buffer pool</param>
-        /// <param name="bufferCapacity"></param>
-        /// <param name="octalPermission">Octal permission string</param>
-        /// <param name="createParent">If true creates any non-existing parent directories</param>
-        /// <returns>Output stream</returns>
-        internal virtual AdlsOutputStream CreateFile(string filename, IfExists mode, AdlsArrayPool<byte> bufferPool, int bufferCapacity, string octalPermission = null, bool createParent = true)
-        {
-            return CreateFileAsync(filename, mode, bufferPool, bufferCapacity, octalPermission, createParent).GetAwaiter().GetResult();
-        }
+/// <summary>
+/// Synchronous API that creates a file and returns the stream to write data to that file in ADLS. The file is opened with exclusive 
+/// access - any attempt to open the same file for append will fail while this stream is open.  
+/// 
+/// Threading: The returned stream is not thread-safe.
+/// </summary>
+/// <param name="filename">File name</param>
+/// <param name="mode">Overwrites the existing file if the mode is Overwrite</param>
+/// <param name="bufferPool">Passed buffer pool</param>
+/// <param name="bufferCapacity"></param>
+/// <param name="octalPermission">Octal permission string</param>
+/// <param name="createParent">If true creates any non-existing parent directories</param>
+/// <returns>Output stream</returns>
+internal virtual AdlsOutputStream CreateFile(string filename, IfExists mode, AdlsArrayPool<byte> bufferPool, int bufferCapacity, string octalPermission = null, bool createParent = true)
+    {
+        return CreateFileAsync(filename, mode, bufferPool, bufferCapacity, octalPermission, createParent).GetAwaiter().GetResult();
+    }
 
         /// <summary>
         /// Asynchronous API that creates a file and returns the stream to write data to that file in ADLS. The file is opened with exclusive 

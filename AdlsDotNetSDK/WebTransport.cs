@@ -627,7 +627,7 @@ namespace Microsoft.Azure.DataLake.Store
             return retVal;
         }
 
-#if !NETSTANDARD2_0
+        #if !NETSTANDARD2_0
         /// <summary>
         /// Makes a single Http call to the server, sends the request and obtains the response. This is a asynchronous call.
         /// </summary>
@@ -779,10 +779,10 @@ namespace Microsoft.Azure.DataLake.Store
 
             return null;
         }
-#endif
-#endregion
+        #endif
+        #endregion
 
-#region Sync
+        #region Sync
 
         /// <summary>
         /// Calls the API that makes the HTTP request to the server. Retries the HTTP request in certain cases. This is a synchronous call.
@@ -835,7 +835,7 @@ namespace Microsoft.Azure.DataLake.Store
             return retVal;
         }
 
-#if !NETSTANDARD2_0
+        #if !NETSTANDARD2_0
         /// <summary>
         /// Makes a single Http call to the server, sends the request and obtains the response. This is a synchronous call.
         /// </summary>
@@ -903,7 +903,7 @@ namespace Microsoft.Azure.DataLake.Store
 #if NET452
                                 using (Stream ipStream = GetCompressedStream(webReq.GetRequestStream(), client, requestData.Count))
 #else
-                                using (Stream ipStream = GetCompressedStream(webReq.GetRequestStreamAsync().GetAwaiter().GetResult(), client, requestData.Count))
+                            using (Stream ipStream = GetCompressedStream(webReq.GetRequestStreamAsync().GetAwaiter().GetResult(), client, requestData.Count))
 #endif
                                 {
                                     ipStream.Write(requestData.Data, requestData.Offset, requestData.Count);
@@ -917,7 +917,7 @@ namespace Microsoft.Azure.DataLake.Store
 #if NET452
                         using (var webResponse = (HttpWebResponse)webReq.GetResponse())
 #else
-                        using (var webResponse = (HttpWebResponse)webReq.GetResponseAsync().GetAwaiter().GetResult())
+                    using (var webResponse = (HttpWebResponse)webReq.GetResponseAsync().GetAwaiter().GetResult())
 #endif
                         {
                             resp.HttpStatus = webResponse.StatusCode;
@@ -969,7 +969,7 @@ namespace Microsoft.Azure.DataLake.Store
 
             return null;
         }
-#endif
-#endregion
+        #endif
+        #endregion
     }
 }
