@@ -310,7 +310,7 @@ namespace Microsoft.Azure.DataLake.Store
                             resp.HttpMessage = webResponse.ReasonPhrase;
                             resp.RequestId = webResponse.Headers.GetValues("x-ms-request-id").FirstOrDefault();
                             PostPowershellLogDetails(webReq, webResponse);
-                            if (op.ReturnsBody)
+                            if (op.RequiresBody && requestData.Data != null)
                             {
                                 int totalBytes = 0;
                                 using (Stream opStream = await webResponse.Content.ReadAsStreamAsync().ConfigureAwait(false))
