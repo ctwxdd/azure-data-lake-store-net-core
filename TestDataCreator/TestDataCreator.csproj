@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AdlsDotNetSDK\Microsoft.Azure.DataLake.Store.csproj">
+    <ProjectReference Include="..\AdlsDotNetSDK\Microsoft.Azure.DataLake.Store.HttpClient.csproj">
       <Name>Microsoft.Azure.DataLake.Store</Name>
     </ProjectReference>
   </ItemGroup>

@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.DataLake.Store", "AdlsDotNetSDK\Microsoft.Azure.DataLake.Store.csproj", "{563744B4-4365-4AF5-B99B-73BC69F3A105}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.DataLake.Store.HttpClient", "AdlsDotNetSDK\Microsoft.Azure.DataLake.Store.HttpClient.csproj", "{563744B4-4365-4AF5-B99B-73BC69F3A105}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Microsoft.Azure.DataLake.Store.UnitTest", "AdlsDotNetSDKUnitTest\Microsoft.Azure.DataLake.Store.UnitTest.csproj", "{9075A922-E5D9-4046-B9A4-5C3C1C89EFBF}"
 EndProject

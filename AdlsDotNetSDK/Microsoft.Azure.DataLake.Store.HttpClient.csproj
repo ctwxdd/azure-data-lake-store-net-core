@@ -1,25 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net452;netstandard1.4;netcoreapp1.1</TargetFrameworks>
-    <PackageId>Microsoft.Azure.DataLake.Store</PackageId>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <!--<TargetFrameworks>netstandard2.0;net452;netstandard1.4;netcoreapp1.1</TargetFrameworks>-->
+    <PackageId>Microsoft.Azure.DataLake.Store.HttpClient</PackageId>
     <AssemblyVersion>1.0.0</AssemblyVersion>
-    <Version>1.1.24</Version>
+    <Version>1.0.1</Version>
     <FileVersion>$(Version)</FileVersion>
     <PackageVersion>$(Version)</PackageVersion>
-    <Authors>Microsoft</Authors>
-    <Description>Microsoft Azure Data Lake Store Filesystem Library for Dot Net</Description>
+    <Authors>Chun-Ting Wu</Authors>
+    <Description>[netstandard2.0 only] Ported Microsoft Azure Data Lake Store Filesystem Library for Dot Net to use HttpClient and HttpClientFactory to prevent socket exhustion issue.</Description>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>Fix null character in the exception when error is recieved as chunked response</PackageReleaseNotes>
-    <Copyright>© Microsoft Corporation. All rights reserved.</Copyright>
     <PackageLicenseUrl>https://raw.githubusercontent.com/Azure/azure-data-lake-store-net/master/LICENSE</PackageLicenseUrl>
     <PackageIconUrl>http://go.microsoft.com/fwlink/?LinkID=288890</PackageIconUrl>
-    <PackageProjectUrl>https://github.com/azure/azure-data-lake-store-net</PackageProjectUrl>
-    <PackageTags>adls sdk datalake azure</PackageTags>
+    <PackageProjectUrl>https://github.com/ctwxdd/azure-data-lake-store-net-core</PackageProjectUrl>
+    <PackageTags>adls sdk datalake azure with HttpClient</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <SignAssembly>true</SignAssembly>
     <DelaySign>true</DelaySign>
     <AssemblyOriginatorKeyFile>..\tools\MSSharedLibKey.snk</AssemblyOriginatorKeyFile>
+    <Company>Microsoft</Company>
   </PropertyGroup>
 
   <ItemGroup>

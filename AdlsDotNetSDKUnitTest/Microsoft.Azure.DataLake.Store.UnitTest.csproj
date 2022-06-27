@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AdlsDotNetSDK\Microsoft.Azure.DataLake.Store.csproj" />
+    <ProjectReference Include="..\AdlsDotNetSDK\Microsoft.Azure.DataLake.Store.HttpClient.csproj" />
     <ProjectReference Include="..\MockServer\MockServer.csproj" />
     <ProjectReference Include="..\TestDataCreator\TestDataCreator.csproj" />
   </ItemGroup>
