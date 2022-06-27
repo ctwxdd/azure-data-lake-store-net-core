@@ -5,7 +5,7 @@
     <!--<TargetFrameworks>netstandard2.0;net452;netstandard1.4;netcoreapp1.1</TargetFrameworks>-->
     <PackageId>Microsoft.Azure.DataLake.Store.HttpClient</PackageId>
     <AssemblyVersion>1.0.0</AssemblyVersion>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <FileVersion>$(Version)</FileVersion>
     <PackageVersion>$(Version)</PackageVersion>
     <Authors>Chun-Ting Wu</Authors>
