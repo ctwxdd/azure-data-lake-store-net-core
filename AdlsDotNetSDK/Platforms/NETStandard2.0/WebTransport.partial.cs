@@ -207,6 +207,58 @@ namespace Microsoft.Azure.DataLake.Store
             }
         }
 
+        /// <summary>
+        /// Verifies the responseData for the operation and initializes it if the encoding is chunked
+        /// </summary>
+        /// <param name="webResponse">HttpWebResponse</param>
+        /// <param name="responseData">ResponseData structure</param>
+        /// <param name="isResponseError">True when we are initializing error response stream else false</param>
+        /// <returns>False if the response is not chunked but the content length is 0 else true</returns>
+        private static bool InitializeResponseData(HttpResponseMessage webResponse, ref ByteBuffer responseData, bool isResponseError = false)
+        {
+            string encoding = webResponse.Headers.TransferEncoding.ToString();
+            if (!string.IsNullOrEmpty(encoding) && encoding.Equals("chunked"))
+            {
+                // If the error response is from our FE, then it wont be chunked. If the error is from IIS
+                // then it may be chunked. So assign a default size of the error response. Even if the remote error 
+                // is not contained in that buffer size, its fine.
+                if (isResponseError)
+                {
+                    responseData.Data = new byte[ErrorResponseDefaultLength];
+                    responseData.Count = ErrorResponseDefaultLength;
+                    responseData.Offset = 0;
+                }
+                //If it is chunked responseData should be instantiated and responseDataLength should be greater than 0, because we dont know the content length
+                if (responseData.Data == null)
+                {
+                    throw new ArgumentNullException(nameof(responseData.Data));
+                }
+                if (responseData.Offset >= responseData.Data.Length || responseData.Offset < 0 ||
+                    responseData.Count + responseData.Offset > responseData.Data.Length)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(responseData.Offset));
+                }
+            }
+            else
+            {
+                //Initialize the response based on content length property
+                if (responseData.Data == null) //For OPEN operation the data might not be chunked
+                {
+                    if (webResponse.Content.Headers.ContentLength > 0)
+                    {
+                        responseData.Data = new byte[(int)webResponse.Content.Headers.ContentLength];
+                        responseData.Offset = 0;
+                        responseData.Count = (int)webResponse.Content.Headers.ContentLength;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
         #region Async
         /// <summary>
         /// Makes a single Http call to the server, sends the request and obtains the response. This is a asynchronous call.
@@ -310,8 +362,13 @@ namespace Microsoft.Azure.DataLake.Store
                             resp.HttpMessage = webResponse.ReasonPhrase;
                             resp.RequestId = webResponse.Headers.GetValues("x-ms-request-id").FirstOrDefault();
                             PostPowershellLogDetails(webReq, webResponse);
-                            if (op.RequiresBody && requestData.Data != null)
+                            if (op.ReturnsBody)
                             {
+                                if (!InitializeResponseData(webResponse, ref responseData))
+                                {
+                                    return null;
+                                }
+
                                 int totalBytes = 0;
                                 using (Stream opStream = await webResponse.Content.ReadAsStreamAsync().ConfigureAwait(false))
                                 {
@@ -443,6 +500,11 @@ namespace Microsoft.Azure.DataLake.Store
                         PostPowershellLogDetails(webReq, webResponse);
                         if (op.ReturnsBody)
                         {
+                            if (!InitializeResponseData(webResponse, ref responseData))
+                            {
+                                return null;
+                            }
+
                             int totalBytes = 0;
                             using (Stream opStream = webResponse.Content.ReadAsStreamAsync().GetAwaiter().GetResult())
                             {
