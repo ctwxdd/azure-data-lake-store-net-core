@@ -105,17 +105,6 @@ namespace Microsoft.Azure.DataLake.Store
             webReq.Method = opMethod;
         }
 
-        /// <summary>
-        /// Sets the WebRequest length
-        /// </summary>
-        /// <param name="webReq">HttpWebRequest</param>
-        /// <param name="count">Content length</param>
-        private static void SetWebRequestContentLength(HttpRequestMessage webReq, int count)
-        {
-            // Set the ContentLength property of the WebRequest.  
-            webReq.Content.Headers.ContentLength = count;
-        }
-
         private static void HandleUnsuccessfullCall(HttpRequestMessage webReq, HttpResponseMessage webResponse, RequestOptions req, OperationResponse resp, string path, string token)
         {
             try
@@ -345,10 +334,6 @@ namespace Microsoft.Azure.DataLake.Store
                                     HttpContent metaDataContent = new ByteArrayContent(requestData.Data, requestData.Offset, requestData.Count);
                                     webReq.Content = metaDataContent;
                                 }
-                                else
-                                {
-                                    SetWebRequestContentLength(webReq, 0);
-                                }
                             }
 
                             var webResponse = await client.HttpClient.SendAsync(webReq, linkedCts.Token).ConfigureAwait(false);
@@ -480,10 +465,6 @@ namespace Microsoft.Azure.DataLake.Store
                             {
                                 HttpContent metaDataContent = new ByteArrayContent(requestData.Data, requestData.Offset, requestData.Count);
                                 webReq.Content = metaDataContent;
-                            }
-                            else
-                            {
-                                SetWebRequestContentLength(webReq, 0);
                             }
                         }
 
